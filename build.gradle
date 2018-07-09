@@ -1,0 +1,61 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+// Define the main class for the application
+mainClassName = 'io.github.lauwarm.SaveAllTheLikesTwitter'
+
+// Version number
+def releaseVersion = '1.0.0'
+
+dependencies {
+    compile 'com.google.guava:guava:23.0'
+    compile 'org.twitter4j:twitter4j-core:4.0.4'
+
+    testCompile 'junit:junit:4.12'
+}
+
+// In this section you declare where to find the dependencies of your project
+repositories {
+    jcenter()
+}
+
+// Task to create a fatJar
+task createFatJar(type: Jar) {
+	manifest {
+		attributes 'Main-Class': 'io.github.lauwarm.SaveAllTheLikesTwitter'
+	}
+	baseName = 'save-all-the-likes-twitter'
+	from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+	with jar
+}
+
+// Task to copy properties file and download folder
+task copyFilesAndFolders(type: Copy) {
+	from '.'
+	into 'build/target'
+	
+	include 'twitter4j.properties.example'
+	include 'download/'
+	
+	rename 'twitter4j.properties.example', 'twitter4j.properties'
+}
+
+task copyFatJar(type: Copy, dependsOn: 'createFatJar') {
+	from fileTree('build/libs').files
+	into 'build/target'
+}
+
+// Task to zip the FatJar, Download Folder and twitter4j.properties
+task createZip(type: Zip, dependsOn: [copyFilesAndFolders, copyFatJar]) {
+	archiveName = 'save-all-the-likes-twitter-' + releaseVersion + '.zip'
+	destinationDir = file('build/dist')
+	
+	from 'build/target'
+}
+
+// Task to initiate a release
+task createRelease(dependsOn: 'createZip') {
+	println 'packing a release'
+}
